@@ -40,6 +40,17 @@ class Movie(db.Model):
 # )
 # db.session.add(new_movie)
 # db.session.commit()
+
+
+@app.route("/delete")
+def delete_movie():
+    movie_id = request.args.get('id')
+    movie_to_delete = Movie.query.get(movie_id)
+    db.session.delete(movie_to_delete)
+    db.session.commit()
+    return redirect(url_for('home'))
+
+
 @app.route("/update", methods=['GET', 'POST'])
 def update():
     form = RateMovieForm()
