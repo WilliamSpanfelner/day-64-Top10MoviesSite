@@ -39,6 +39,11 @@ class Movie(db.Model):
 # )
 # db.session.add(new_movie)
 # db.session.commit()
+@app.route("/update", methods=['GET', 'POST'])
+def update():
+    id = request.args.get('id')
+    print(f"movie id = {id}")
+    return render_template('edit.html')
 
 
 @app.route("/")
