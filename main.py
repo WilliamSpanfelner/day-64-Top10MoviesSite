@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 # from wtforms import StringField, SubmitField
 # from wtforms.validators import DataRequired
 import requests
-from forms import RateMovieForm
+from forms import RateMovieForm, AddMovieForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -40,6 +40,12 @@ class Movie(db.Model):
 # )
 # db.session.add(new_movie)
 # db.session.commit()
+
+@app.route("/add", methods=['GET', 'POST'])
+def add_movie():
+    form = AddMovieForm()
+    return render_template('add.html', form=form)
+
 
 
 @app.route("/delete")
