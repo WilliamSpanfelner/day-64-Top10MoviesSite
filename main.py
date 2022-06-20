@@ -5,6 +5,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 import requests
+from forms import RateMovieForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -41,9 +42,10 @@ class Movie(db.Model):
 # db.session.commit()
 @app.route("/update", methods=['GET', 'POST'])
 def update():
+    form = RateMovieForm()
     id = request.args.get('id')
     print(f"movie id = {id}")
-    return render_template('edit.html')
+    return render_template('edit.html', form=form)
 
 
 @app.route("/")
