@@ -1,9 +1,9 @@
 from flask import Flask, render_template, redirect, url_for, request
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
+# from flask_wtf import FlaskForm
+# from wtforms import StringField, SubmitField
+# from wtforms.validators import DataRequired
 import requests
 from forms import RateMovieForm
 
@@ -43,9 +43,16 @@ class Movie(db.Model):
 @app.route("/update", methods=['GET', 'POST'])
 def update():
     form = RateMovieForm()
-    id = request.args.get('id')
-    print(f"movie id = {id}")
-    return render_template('edit.html', form=form)
+    movie_id = request.args.get('id')
+    movie_to_update = Movie.query.get(movie_id)
+    if form.validate_on_submit():
+        new_rating = float(request.form.get('new_rating'))
+        new_review = request.form.get('new_review')
+        movie_to_update.rating = new_rating
+        movie_to_update.review = new_review
+        db.session.commit()
+        return redirect(url_for('home'))
+    return render_template('edit.html', form=form, movie=movie_to_update)
 
 
 @app.route("/")
