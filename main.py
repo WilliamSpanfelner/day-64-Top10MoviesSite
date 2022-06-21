@@ -1,11 +1,12 @@
 from flask import Flask, render_template, redirect, url_for, request
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
-# from flask_wtf import FlaskForm
-# from wtforms import StringField, SubmitField
-# from wtforms.validators import DataRequired
 import requests
 from forms import RateMovieForm, AddMovieForm
+
+API_KEY = "Your API KEY goes here"
+TMDB_BASE_URL = "https://api.themoviedb.org/3/"
+TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -21,9 +22,9 @@ class Movie(db.Model):
     title = db.Column(db.String(250), unique=True, nullable=False)
     year = db.Column(db.Integer, nullable=False)
     description = db.Column(db.String(250), nullable=False)
-    rating = db.Column(db.Float, nullable=False)
-    ranking = db.Column(db.Integer, nullable=False)
-    review = db.Column(db.String(250), nullable=False)
+    rating = db.Column(db.Float, nullable=True)
+    ranking = db.Column(db.Integer, nullable=True)
+    review = db.Column(db.String(250), nullable=True)
     img_url = db.Column(db.String(250), nullable=False)
 
 
@@ -41,11 +42,64 @@ class Movie(db.Model):
 # db.session.add(new_movie)
 # db.session.commit()
 
+def get_movie_info_for(movie_id):
+    """
+    Gets new record information from tmdb api and returns a Movie db object
+    :param movie_id: int - the tmdb movie id
+    :return: Movie db object
+    """
+    id_search_url = TMDB_BASE_URL + f"movie/{movie_id}"
+    response = requests.get(id_search_url, params={"api_key": API_KEY})
+
+    response.raise_for_status()
+    movie = response.json()
+    movie_to_add = Movie(
+        title=movie['title'],
+        year=int(movie['release_date'][:4]),
+        description=movie['overview'],
+        img_url=f"{TMDB_IMAGE_BASE_URL}{movie['poster_path']}",
+    )
+
+    return movie_to_add
+
+
+def search_tmdb_for(title):
+    """Returns a list of movies for a given title
+
+    :param title: string - the desired movie title
+    :return: [string] - a list of dictionaries titles and dates
+    """
+    title_search_url = TMDB_BASE_URL + "search/movie"
+    response = requests.get(title_search_url, params={"api_key": API_KEY, "query": title})
+    response.raise_for_status()
+    movie_titles_and_dates = response.json()['results']
+
+    return movie_titles_and_dates
+
+
+@app.route("/add_record")
+def add_record():
+    tmdb_movie_id = request.args.get('id')
+
+    movie_to_add = get_movie_info_for(tmdb_movie_id)
+    db.session.add(movie_to_add)
+    db.session.commit()
+
+    movie = Movie.query.filter_by(title=movie_to_add.title).first()
+    print(f"local movie id: {movie.id}")
+    return redirect(url_for('update', id=movie.id))
+
+
 @app.route("/add", methods=['GET', 'POST'])
 def add_movie():
     form = AddMovieForm()
-    return render_template('add.html', form=form)
+    if request.method == 'POST':
+        title_of_interest = request.form.get('title')
+        # Query TMDB for data
+        movies = search_tmdb_for(title_of_interest)
+        return render_template('select.html', movies=movies)
 
+    return render_template('add.html', form=form)
 
 
 @app.route("/delete")
@@ -69,6 +123,7 @@ def update():
         movie_to_update.review = new_review
         db.session.commit()
         return redirect(url_for('home'))
+
     return render_template('edit.html', form=form, movie=movie_to_update)
 
 
