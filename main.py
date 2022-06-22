@@ -4,7 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 import requests
 from forms import RateMovieForm, AddMovieForm
 
-API_KEY = "Your API KEY goes here"
+
+API_KEY = "Your API Key here"
 TMDB_BASE_URL = "https://api.themoviedb.org/3/"
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
@@ -129,7 +130,13 @@ def update():
 
 @app.route("/")
 def home():
-    movies = Movie.query.all()
+    # movies = Movie.query.all()
+    movies = Movie.query.order_by(Movie.rating).all()
+
+    for index in range(len(movies)):
+        movies[index].ranking = len(movies) - index
+    db.session.commit()
+
     return render_template("index.html", movies=movies)
 
 
